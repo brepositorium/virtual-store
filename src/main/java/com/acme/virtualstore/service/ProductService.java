@@ -4,8 +4,8 @@ import com.acme.virtualstore.dto.ProductDTO;
 
 public interface ProductService {
 
-    ProductDTO getProduct(Long id) throws Exception;
+    ProductDTO getProduct(Long id);
     ProductDTO createProduct(ProductDTO productDTO);
-    void deleteProduct(Long id) throws Exception;
+    void deleteProduct(Long id);
 
 }
