@@ -29,8 +29,24 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderDTO createOrder(OrderDTO orderDTO) {
         Order order = convertToEntity(orderDTO);
+        updateProductInventory(order);
         Order savedOrder = orderRepository.save(order);
         return convertOrderToDTO(savedOrder);
+    }
+
+    private void updateProductInventory(Order order) {
+        for (OrderItem orderItem : order.getOrderItems()) {
+            Product product = orderItem.getProduct();
+            int quantityOrdered = orderItem.getQuantity();
+
+            if (product.getItemsOnStock() < quantityOrdered) {
+                throw new IllegalStateException("Not enough items in stock for product: " + product.getName());
+            }
+
+            product.setItemsOnStock(product.getItemsOnStock() - quantityOrdered);
+            product.setItemsSold(product.getItemsSold() + quantityOrdered);
+            productRepository.save(product);
+        }
     }
 
     @Override
