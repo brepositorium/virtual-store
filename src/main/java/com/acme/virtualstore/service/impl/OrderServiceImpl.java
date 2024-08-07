@@ -4,6 +4,7 @@ import com.acme.virtualstore.dto.OrderDTO;
 import com.acme.virtualstore.dto.OrderItemDTO;
 import com.acme.virtualstore.entity.Order;
 import com.acme.virtualstore.entity.OrderItem;
+import com.acme.virtualstore.entity.Product;
 import com.acme.virtualstore.exception.ResourceNotFoundException;
 import com.acme.virtualstore.repository.OrderRepository;
 import com.acme.virtualstore.repository.ProductRepository;
@@ -53,7 +54,6 @@ public class OrderServiceImpl implements OrderService {
     private OrderItemDTO convertOrderItemToDTO(OrderItem orderItem) {
         return OrderItemDTO.builder()
                 .id(orderItem.getId())
-                .orderId(orderItem.getOrder().getId())
                 .productId(orderItem.getProduct().getId())
                 .quantity(orderItem.getQuantity())
                 .build();
