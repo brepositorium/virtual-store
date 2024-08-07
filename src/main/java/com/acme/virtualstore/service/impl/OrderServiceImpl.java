@@ -4,6 +4,7 @@ import com.acme.virtualstore.dto.OrderDTO;
 import com.acme.virtualstore.dto.OrderItemDTO;
 import com.acme.virtualstore.entity.Order;
 import com.acme.virtualstore.entity.OrderItem;
+import com.acme.virtualstore.entity.Product;
 import com.acme.virtualstore.exception.ResourceNotFoundException;
 import com.acme.virtualstore.repository.OrderRepository;
 import com.acme.virtualstore.repository.ProductRepository;
@@ -28,8 +29,24 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public OrderDTO createOrder(OrderDTO orderDTO) {
         Order order = convertToEntity(orderDTO);
+        updateProductInventory(order);
         Order savedOrder = orderRepository.save(order);
         return convertOrderToDTO(savedOrder);
+    }
+
+    private void updateProductInventory(Order order) {
+        for (OrderItem orderItem : order.getOrderItems()) {
+            Product product = orderItem.getProduct();
+            int quantityOrdered = orderItem.getQuantity();
+
+            if (product.getItemsOnStock() < quantityOrdered) {
+                throw new IllegalStateException("Not enough items in stock for product: " + product.getName());
+            }
+
+            product.setItemsOnStock(product.getItemsOnStock() - quantityOrdered);
+            product.setItemsSold(product.getItemsSold() + quantityOrdered);
+            productRepository.save(product);
+        }
     }
 
     @Override
@@ -53,7 +70,6 @@ public class OrderServiceImpl implements OrderService {
     private OrderItemDTO convertOrderItemToDTO(OrderItem orderItem) {
         return OrderItemDTO.builder()
                 .id(orderItem.getId())
-                .orderId(orderItem.getOrder().getId())
                 .productId(orderItem.getProduct().getId())
                 .quantity(orderItem.getQuantity())
                 .build();

@@ -41,7 +41,7 @@ class OrderServiceImplTest {
     }
 
     @Test
-    void createOrder_ValidOrderDTO_ReturnsCreatedOrderDTO() {
+    void createOrder_ValidOrderDTO_ReturnsCreatedOrderDTOAndUpdatesInventory() {
         // Arrange
         OrderItemDTO orderItemDTO = OrderItemDTO.builder()
                 .productId(1L)
@@ -55,6 +55,8 @@ class OrderServiceImplTest {
 
         Product product = new Product();
         product.setId(1L);
+        product.setItemsOnStock(5);
+        product.setItemsSold(0);
 
         Order savedOrder = new Order();
         savedOrder.setId(1L);
@@ -81,8 +83,39 @@ class OrderServiceImplTest {
         assertEquals(1L, result.getOrderItems().get(0).getProductId());
         assertEquals(2, result.getOrderItems().get(0).getQuantity());
 
+        // Verify inventory update
+        assertEquals(3, product.getItemsOnStock());
+        assertEquals(2, product.getItemsSold());
+
         verify(productRepository).findById(1L);
+        verify(productRepository).save(product);
         verify(orderRepository).save(any(Order.class));
+    }
+
+    @Test
+    void createOrder_InsufficientStock_ThrowsIllegalStateException() {
+        // Arrange
+        OrderItemDTO orderItemDTO = OrderItemDTO.builder()
+                .productId(1L)
+                .quantity(10)
+                .build();
+
+        OrderDTO inputOrderDTO = OrderDTO.builder()
+                .orderDate(LocalDateTime.now())
+                .orderItems(List.of(orderItemDTO))
+                .build();
+
+        Product product = new Product();
+        product.setId(1L);
+        product.setItemsOnStock(5);
+        product.setItemsSold(0);
+
+        when(productRepository.findById(1L)).thenReturn(Optional.of(product));
+
+        // Act & Assert
+        assertThrows(IllegalStateException.class, () -> orderService.createOrder(inputOrderDTO));
+        verify(productRepository).findById(1L);
+        verify(orderRepository, never()).save(any(Order.class));
     }
 
     @Test
